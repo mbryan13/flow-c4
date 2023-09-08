@@ -1,0 +1,164 @@
+.react-flow .react-flow__handle {
+  width: '20px';
+  height: '20px';
+  opacity: 0;
+}
+
+/* .react-flow .react-flow__handle-top {
+  top: -10px;
+}
+
+.react-flow .react-flow__handle-bottom {
+  bottom: -10px;
+} */
+
+/* .react-flow .react-flow__handle-right {
+  left: -10px;
+} */
+
+.react-flow .react-flow__node {
+  /* border-width: 2px;
+  font-weight: 700; */
+  /* padding-inline: 20px; */
+}
+
+.react-flow .react-flow__edge path,
+.react-flow__connectionline path {
+  stroke-width: 2;
+}
+
+.wrapper {
+  flex-grow: 1;
+  height: 100vh;
+  width: 100vw;
+}
+
+.toolbar {
+  position: absolute;
+  width: 300px;
+  height: 30px;
+  top: -33px;
+  left: 5px;
+  background-color: rgba(37, 37, 37, .7);
+  border: 1px solid black;
+  border-radius: 2px;
+  z-index: 100;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.toolbar:hover {
+  transition: 0.2s ease-in-out;
+  top: 0;
+}
+
+.text-updater-node {
+  background-color: rgb(71, 71, 255);
+  height: 150px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 30px;
+  align-items: center;  
+  gap: 5px;
+  border-radius: 1px;
+  border: 1px solid black;
+  text-shadow: 1px 1px 1px rgb(84, 84, 84);
+  position: relative;
+}
+
+.drag-handle {
+  width: 80%;
+  height: 10px;
+  position: absolute;
+  top: 15px;
+  background-color: rgb(0, 0, 193);
+  border: 1px solid white;
+}
+
+.generic-input {
+  width: 90%;
+  background-color: transparent;
+  text-align: center;
+  border: none;
+  outline: none;
+  color: 'white';
+  position: 'relative';
+}
+
+.generic-input:hover {
+  border-block: 1px solid grey;
+}
+
+.input-title {
+  font-size: 20px;
+  font-weight: 700;
+  height: 25px;
+  line-height: 25px;
+  color: white;
+  overflow-x: hidden;
+  overflow-y: hidden;
+}
+
+.input-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  height: 20px;
+  line-height: 20px;
+  color: white;
+  position: 'relative';
+}
+
+.input-description {
+  font-size: 15px;
+  font-weight: 10;
+  font-family: 'Roboto', sans-serif;
+  height: 70px;
+  color: white;
+  overflow-y: hidden;
+  padding-top: 5px;
+  vertical-align: top;
+  resize: none;
+}
+
+.diagram-input {
+  background: transparent;
+  border: none;
+}
+
+.diagram-input:focus {
+  outline: none;
+}
+
+.diagram-name {
+  position: absolute;
+  bottom: 52px;
+  left: 15px;
+  font-size: 22px;
+  font-weight: bold;
+}
+.diagram-description {
+  position: absolute;
+  bottom: 30px;
+  left: 15px;
+  min-width: 300px;
+  width: auto;
+  /* font-size: 25px; */
+  color: grey;
+  background: transparent;
+  border: none;
+}
+.diagram-last-updated-date {
+  position: absolute;
+  bottom: 10px;
+  left: 17px;
+  color: grey;
+  /* font-size: 25px; */
+}
+
+
+
+
