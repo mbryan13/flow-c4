@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, useReactFlow, ReactFlowProvider, MarkerType, Background } from 'reactflow';
 
 import 'reactflow/dist/style.css';
@@ -10,24 +10,24 @@ const nodeTypes = {
 };
 
 function App() {
-  const reactFlowWrapper = React.useRef(null);
+  const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useReactFlow();
   const { project, setViewport } = reactFlowInstance;
-  const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const [diagramName, setDiagramName] = React.useState(null);
-  const [savedDiagramName, setSavedDiagramName] = React.useState(null);
-  const [diagramLastUpdated, setDiagramLastUpdated] = React.useState('');
-  const [diagramDescription, setDiagramDescription] = React.useState('');
-  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = React.useState([]);
-  const [diagramForwardsHistory, setDiagramForwardsHistory] = React.useState([]);
+  const [diagramName, setDiagramName] = useState(null);
+  const [savedDiagramName, setSavedDiagramName] = useState(null);
+  const [diagramLastUpdated, setDiagramLastUpdated] = useState('');
+  const [diagramDescription, setDiagramDescription] = useState('');
+  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = useState([]);
+  const [diagramForwardsHistory, setDiagramForwardsHistory] = useState([]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [lineType, setLineType] = React.useState('straight');
-  const [selectedNode, setSelectedNode] = React.useState();
+  const [lineType, setLineType] = useState('straight');
+  const [selectedNode, setSelectedNode] = useState();
 
-  const onConnect = React.useCallback((params) => setEdges((eds) => {
+  const onConnect = useCallback((params) => setEdges((eds) => {
     console.log(params, eds)
     return addEdge({...params, type: lineType,  animated: true, markerStart: { type: MarkerType.ArrowClosed, color: 'black' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'black' },
   }, eds)
@@ -55,7 +55,7 @@ function App() {
     setDiagramBackwardsHistory(newDiagramBackwardsHistory);
   }, [diagramForwardsHistory, diagramBackwardsHistory])
 
-  const createNewDiagram = React.useCallback(() => {
+  const createNewDiagram = useCallback(() => {
     const instanceObject = {
       nodes: [],
       edges: [],
@@ -69,55 +69,7 @@ function App() {
     setDiagramBackwardsHistory(diagramBackwardsHistory.concat('New Diagram'));
   }, [diagramBackwardsHistory]);
 
-  React.useEffect(() => {
-    const newDiagramName = diagramBackwardsHistory[diagramBackwardsHistory.length - 1];
-    console.log('new diagram name: ', newDiagramName);
-    setDiagramDescription('');
-    setSavedDiagramName(newDiagramName);
-    setDiagramName(newDiagramName);
-  }, [diagramBackwardsHistory])
-
-  React.useEffect(() => {
-    console.log('diagram backwards history: ', diagramBackwardsHistory);
-    console.log('diagram forwards history: ', diagramForwardsHistory);
-  }, [diagramForwardsHistory, diagramBackwardsHistory]);
-
-  React.useEffect(() => {
-    // console.log('loading diagram: ', savedDiagramName);
-    if(!savedDiagramName) return;
-    const diagram = localStorage.getItem(savedDiagramName);
-    if(!diagram) return;
-    console.log('loading diagram: ', savedDiagramName);
-    const parsedDiagram = JSON.parse(diagram);
-    parsedDiagram.nodes.forEach((node) => {
-      node.data?.functions?.forEach((funcName) => {
-        node.data[funcName] = nodeFunctions[funcName];
-      });
-    });
-    setNodes(parsedDiagram.nodes)
-    setEdges(parsedDiagram.edges)
-    setViewport(parsedDiagram.viewport);
-    setDiagramLastUpdated(parsedDiagram.lastUpdated);
-    setDiagramDescription(parsedDiagram.diagramDescription);
-  
-  }, [savedDiagramName]);
-
-
-  const onEdgeClick = React.useCallback((event, edge) => {
-    if(!event.ctrlKey) return;
-    const newEdges = edges.filter((e) => e.id !== edge.id);
-    setEdges(newEdges);
-  }, [edges, setEdges]);
-
-  // React.useEffect(() => {
-  //   for (const key in localStorage) {
-  //     console.log(key);
-  //     if(key !== 'Bkanking System') localStorage.removeItem(key);
-  //   }
-  //   console.log(localStorage)
-  // }, []);
-
-  const modifyText = React.useCallback((event, textType, nodeID) => {
+  const modifyText = useCallback((event, textType, nodeID) => {
     const inputText = event.target.value;
     setNodes((currentNodes) => {
       const newNodes = currentNodes.map((node) => {
@@ -132,9 +84,10 @@ function App() {
       });
       return newNodes;
     });
-  }, []);
+  }, [setNodes]);
 
   const saveDiagram = useCallback((diagramName, diagramDescription) => {
+    if(!diagramName) return;
     if(diagramName !== savedDiagramName) {
       console.log('names do not match');
       // replace the most recent diagram in the backwards history with the new diagram name
@@ -169,26 +122,14 @@ function App() {
     localStorage.setItem(diagramName, JSON.stringify(instanceObject));
   }, [reactFlowInstance, diagramBackwardsHistory, savedDiagramName]);
 
-  const nodeFunctions = {
-    modifyText
-  }
-
-  const handleDiagramNameChange = React.useCallback((event) => {
+  const handleDiagramNameChange = useCallback((event) => {
     if(event.key !== 'Enter') return setDiagramName(event.target.value);
     console.log(localStorage)
     saveDiagram(diagramName, diagramDescription);
   }, [setDiagramName, diagramName, diagramDescription, saveDiagram]);
 
 
-
-  React.useEffect(() => {
-    const intervalID = setInterval(() => saveDiagram(diagramName, diagramDescription), 10000); 
-    return () => {
-      clearInterval(intervalID);
-    }
-  }, [saveDiagram, diagramName, diagramDescription, savedDiagramName]);
-
-  const onNodeClick = React.useCallback((event, node) => {
+  const onNodeClick = useCallback((event, node) => {
     if(!event.ctrlKey || !event.shiftKey) return;
     const newNodes = nodes.filter((n) => n.id !== node.id);
     setNodes(newNodes);
@@ -196,16 +137,91 @@ function App() {
     setEdges(newEdges);
   }, [nodes, edges, setNodes, setEdges]);
 
-  const onNodeMouseEnter = React.useCallback((event, node) => {
+  const onNodeMouseEnter = useCallback((event, node) => {
     setSelectedNode(node);
   });
 
-  const onNodeMouseLeave = React.useCallback((event, node) => {
+  const onNodeMouseLeave = useCallback((event, node) => {
     setSelectedNode({id: '-1'});
   });
 
+  const onEdgeClick = useCallback((event, edge) => {
+    if(!event.ctrlKey) return;
+    const newEdges = edges.filter((e) => e.id !== edge.id);
+    setEdges(newEdges);
+  }, [edges, setEdges]);
 
-  React.useEffect(() => {
+  const addNode = useCallback(() => {
+    setNodes((currentNodes) => {
+      const { top, left } = reactFlowWrapper.current.getBoundingClientRect();
+      const newNode = {
+        id: (currentNodes.length + 1).toString(),
+        type: 'genericNode',
+        dragHandle: '.drag-handle',
+        position: project({ x: mousePosition.x - left - 150, y: mousePosition.y - top - 75 }),
+        data: {
+          functions: ['modifyText'],
+          title: '',
+          subtitle: '',
+          description: '',
+          modifyText
+        },
+      };
+      return currentNodes.concat(newNode);
+    });
+  }, [setNodes, mousePosition, project, modifyText])
+
+  useEffect(() => {
+    const newDiagramName = diagramBackwardsHistory[diagramBackwardsHistory.length - 1];
+    console.log('new diagram name: ', newDiagramName);
+    setDiagramDescription('');
+    setSavedDiagramName(newDiagramName);
+    setDiagramName(newDiagramName);
+  }, [diagramBackwardsHistory])
+
+  useEffect(() => {
+    console.log('diagram backwards history: ', diagramBackwardsHistory);
+    console.log('diagram forwards history: ', diagramForwardsHistory);
+  }, [diagramForwardsHistory, diagramBackwardsHistory]);
+
+  useEffect(() => {
+    const nodeFunctions = {
+      modifyText
+    };
+    if(!savedDiagramName) return;
+    const diagram = localStorage.getItem(savedDiagramName);
+    if(!diagram) return;
+    console.log('loading diagram: ', savedDiagramName);
+    const parsedDiagram = JSON.parse(diagram);
+    parsedDiagram.nodes.forEach((node) => {
+      node.data?.functions?.forEach((funcName) => {
+        node.data[funcName] = nodeFunctions[funcName];
+      });
+    });
+    setNodes(parsedDiagram.nodes)
+    setEdges(parsedDiagram.edges)
+    setViewport(parsedDiagram.viewport);
+    setDiagramLastUpdated(parsedDiagram.lastUpdated);
+    setDiagramDescription(parsedDiagram.diagramDescription);
+  
+  }, [savedDiagramName, setEdges, setNodes, setViewport]); 
+
+  useEffect(() => {
+    const intervalID = setInterval(() => saveDiagram(diagramName, diagramDescription), 10000); 
+    return () => {
+      clearInterval(intervalID);
+    }
+  }, [saveDiagram, diagramName, diagramDescription, savedDiagramName]);
+
+  // useEffect(() => {
+  //   for (const key in localStorage) {
+  //     console.log(key);
+  //     if(key !== 'Bkanking System') localStorage.removeItem(key);
+  //   }
+  //   console.log(localStorage)
+  // }, []);
+
+  useEffect(() => {
     if(!selectedNode) return;
     setNodes((currentNodes) => {
       const newNodes = currentNodes.map((node) => {
@@ -222,29 +238,8 @@ function App() {
     });
   }, [selectedNode]);
 
-  const addNode = useCallback(() => {
-      setNodes((currentNodes) => {
-        const { top, left } = reactFlowWrapper.current.getBoundingClientRect();
-        const newNode = {
-          id: (currentNodes.length + 1).toString(),
-          type: 'genericNode',
-          dragHandle: '.drag-handle',
-          position: project({ x: mousePosition.x - left - 150, y: mousePosition.y - top - 75 }),
-          data: {
-            functions: ['modifyText'],
-            title: '',
-            subtitle: '',
-            description: '',
-            modifyText
-          },
-        };
-        return currentNodes.concat(newNode);
-      });
-    }, [setNodes, mousePosition, project, modifyText])
-
-
   // add event listeners
-  React.useEffect(() => {
+  useEffect(() => {
     const handleKeyPress = (event) => {
       if (event.key === 'f' && event.ctrlKey) {  
         console.log(mousePosition)
@@ -290,7 +285,7 @@ function App() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         snapGrid={[30, 30]}
-        snapToGrid={true}
+        // snapToGrid={true}
         onEdgeClick={onEdgeClick}
         onNodeClick={onNodeClick}
         onNodeMouseEnter={onNodeMouseEnter}
