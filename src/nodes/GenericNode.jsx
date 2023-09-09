@@ -42,7 +42,7 @@ function GenericNode({ data, isConnectable, id }) {
 
   useEffect(() => {
     Object.keys(handleRefs).forEach((key) => {
-      handleRefs[key].current.style.opacity = !nodeIsHovered ? 0.2 : 0;
+      handleRefs[key].current.style.opacity = nodeIsHovered ? 0.2 : 0;
     })
   }, [nodeIsHovered]);
 

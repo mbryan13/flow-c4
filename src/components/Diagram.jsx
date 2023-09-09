@@ -34,9 +34,26 @@ const Diagram = (props) => {
   const [lineType, setLineType] = useState('straight');
   const [selectedNode, setSelectedNode] = useState();
 
+  const updateEdgeLabel = useCallback((newLabel, edgeID, labelHeight) => {
+    setEdges((currentEdges) => {
+      const newEdges = currentEdges.map((edge) => {
+        if(edge.id !== edgeID) return edge;
+        return {
+          ...edge,
+          label: newLabel,
+          data: {
+            ...edge.data,
+            labelHeight
+          }
+        }
+      });
+      return newEdges;
+    });
+  }, [setEdges]);
+
   const onConnect = useCallback((params) => setEdges((eds) => {
     console.log(params, eds)
-    return addEdge({...params, type: 'custom',  label: 'hello are you working', animated: markers.isAnimated, markerStart: { type: markers.start.type, color: markers.start.color }, markerEnd: { type: markers.end.type, color: markers.end.color },
+    return addEdge({...params, type: 'custom', data: { functions: ['updateEdgeLabel'], updateEdgeLabel }, animated: markers.isAnimated, markerStart: { type: markers.start.type, color: markers.start.color }, markerEnd: { type: markers.end.type, color: markers.end.color },
   }, eds)
   }), [setEdges]);
 
@@ -44,7 +61,9 @@ const Diagram = (props) => {
     if(event.key !== 'Enter') return setDiagramName(event.target.value);
     console.log(localStorage)
     const instanceObject = reactFlowInstance.toObject();
-    saveDiagram(diagramName, diagramDescription, instanceObject);
+    const lastUpdated = formatDate(new Date());
+    setDiagramLastUpdated(lastUpdated);
+    saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
   }, [reactFlowInstance, setDiagramName, diagramName, diagramDescription, saveDiagram]);
 
   const modifyText = useCallback((event, textType, nodeID) => {
@@ -64,12 +83,18 @@ const Diagram = (props) => {
     });
   }, [setNodes]);
 
+
   const onEdgeClick = useCallback((event, edge) => {
     if(!event.ctrlKey) {
       console.log(edge);
       const newEdges = edges.map((e) => {
         if(e.id === edge.id) {
-          e.label = 'hello well this sort of works but not really not very user friendly';
+          if(!e.label) {
+            return {
+              ...e,
+              label: ' '
+            }
+          }
         }
         return e;
       });
@@ -121,6 +146,10 @@ const Diagram = (props) => {
     const nodeFunctions = {
       modifyText
     };
+
+    const edgeFunctions = {
+      updateEdgeLabel
+    };
     if(!savedDiagramName) return;
     const diagram = localStorage.getItem(savedDiagramName);
     if(!diagram) return;
@@ -131,6 +160,11 @@ const Diagram = (props) => {
         node.data[funcName] = nodeFunctions[funcName];
       });
     });
+    parsedDiagram.edges.forEach((edge) => {
+      edge.data?.functions?.forEach((funcName) => {
+        edge.data[funcName] = edgeFunctions[funcName];
+      });
+    });
     setNodes(parsedDiagram.nodes)
     setEdges(parsedDiagram.edges)
     setViewport(parsedDiagram.viewport);
@@ -138,7 +172,7 @@ const Diagram = (props) => {
     setDiagramName(savedDiagramName);
     setDiagramLastUpdated(parsedDiagram.lastUpdated);
   
-  }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText]); 
+  }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText, updateEdgeLabel]); 
 
   // update which node is being hovered over
   useEffect(() => {
@@ -168,7 +202,9 @@ const Diagram = (props) => {
         if (event.key === 's' && event.ctrlKey) {
           console.log('saving diagram')
           const instanceObject = reactFlowInstance.toObject();
-          saveDiagram(diagramName, diagramDescription, instanceObject);
+          const lastUpdated = formatDate(new Date());
+          setDiagramLastUpdated(lastUpdated);
+          saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
         }
       }
       const handleMouseMove = (event) => {
@@ -220,3 +256,19 @@ export default (props) => (
     <Diagram {...props} />
   </ReactFlowProvider>
 )
+
+function formatDate(date) {
+  // ex. Wednesday, March 22 at 4:30 PM UTC
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+    'October', 'November', 'December'];
+  const day = days[date.getDay()];
+  const month = months[date.getMonth()];
+  const dayOfMonth = date.getDate();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
+  const formattedMinute = minute < 10 ? `0${minute}` : minute;
+  return `${day}, ${month} ${dayOfMonth} at ${formattedHour}:${formattedMinute} ${ampm} UTC`;
+};

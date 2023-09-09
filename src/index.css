@@ -55,18 +55,53 @@
   top: 0;
 }
 
-.edgebutton {
-  width: 20px;
-  height: 20px;
-  background: #eee;
-  border: 1px solid #fff;
-  cursor: pointer;
+.add-label-button {
+  width: 15px;
+  height: 15px;
+  position: absolute;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
-  font-size: 12px;
-  line-height: 1;
+  background-color: rgba(31, 240, 59, 0);
+  border: 1px solid rgba(128, 128, 128, 0.259);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(128, 128, 128);
+  font-weight: bold;
+  font-size: 15px;
+  z-index: 1;
+  opacity: 0;
 }
 
-.edgebutton:hover {
+.add-label-button:hover {
+  background-color: rgba(31, 240, 59, 0.8);
+  opacity: 1;
+  border: 1px solid rgba(128, 128, 128, 0.459);
+  color: rgb(128, 128, 128);
+}
+
+.edgelabel {
+  min-width: 50px;
+  max-width: 200px;
+  width: auto;
+  height: auto;
+  text-align: center;
+  /* height: 20px; */
+  /* background: #eee; */
+  border: 1px solid rgba(128, 128, 128, 0.404);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.5;
+  z-index: 100;
+  resize: none;
+  padding: 10px;
+  overflow-y: hidden;
+  /* transform: rotateZ(45deg); */
+}
+
+.edgelabel:hover {
   box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.08);
 }
 

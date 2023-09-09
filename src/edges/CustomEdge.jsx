@@ -1,4 +1,4 @@
-import React from "react";
+import {useEffect, useState, useRef} from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -8,15 +8,12 @@ import {
 
 import "../index.css";
 
-const onEdgeClick = (evt, id) => {
-  evt.stopPropagation();
-  alert(`remove ${id}`);
-};
-
 export default function CustomEdge(props) {
-  const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd } = props;
+  const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd, label, data } = props;
+  const { updateEdgeLabel, labelHeight } = data;
+  const [edgeLabel, setEdgeLabel] = useState('');
+  const textAreaRef = useRef(null);
   const targetHandle = id.split('-')[2][1];
-
   let nudgeY = 0;
   let nudgeX = 0;
   if(targetHandle === 'h') nudgeY = 10;
@@ -33,6 +30,30 @@ export default function CustomEdge(props) {
     targetPosition
   });
 
+  useEffect(() => {
+    setEdgeLabel(label);
+  }, [label])
+
+  useEffect(() => {
+    console.log('label height changed: ', labelHeight)
+    if(textAreaRef.current) {
+      textAreaRef.current.style.height = labelHeight;
+    }
+  }, [labelHeight])
+
+  const resizeTextArea = () => {
+    if (textAreaRef.current) {
+      console.log('resizing text area')
+      textAreaRef.current.style.height = "auto";
+      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight - 15}px`;
+    }
+  };
+
+  const handleChange = (e) => {
+    setEdgeLabel((e.target.value).trimStart());
+    resizeTextArea();
+  };
+
   return (
     <>
       <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
@@ -47,13 +68,15 @@ export default function CustomEdge(props) {
             pointerEvents: "all"
           }}
           className="nodrag nopan"
-        >
-          <button
-            className="edgebutton"
-            onClick={(event) => onEdgeClick(event, id)}
-          >
-            ×
-          </button>
+        >   
+            {label && <textarea
+              className="edgelabel"
+              rows={1}
+              ref={textAreaRef}
+              value={edgeLabel}
+              onChange={handleChange}
+              onBlur={() => updateEdgeLabel(edgeLabel, id, textAreaRef.current.style.height)}
+            />}
         </div>
       </EdgeLabelRenderer>
     </>

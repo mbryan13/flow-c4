@@ -50,7 +50,7 @@ function App() {
   }, [diagramBackwardsHistory]);
 
 
-  const saveDiagram = useCallback((diagramName, diagramDescription, instanceObject) => {
+  const saveDiagram = useCallback((diagramName, diagramDescription, instanceObject, lastUpdated) => {
     if(!diagramName) return;
     if(diagramName !== savedDiagramName) {
       console.log('names do not match');
@@ -58,22 +58,6 @@ function App() {
       const newDiagramBackwardsHistory = diagramBackwardsHistory.slice(0, diagramBackwardsHistory.length - 1).concat(diagramName);
       setDiagramBackwardsHistory(newDiagramBackwardsHistory);
     }
-    const formatDate = (date) => {
-      // ex. Wednesday, March 22 at 4:30 PM UTC
-      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
-        'October', 'November', 'December'];
-      const day = days[date.getDay()];
-      const month = months[date.getMonth()];
-      const dayOfMonth = date.getDate();
-      const hour = date.getHours();
-      const minute = date.getMinutes();
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
-      const formattedMinute = minute < 10 ? `0${minute}` : minute;
-      return `${day}, ${month} ${dayOfMonth} at ${formattedHour}:${formattedMinute} ${ampm} UTC`;
-    };
-    const lastUpdated = formatDate(new Date());
 
     instanceObject.lastUpdated = lastUpdated;
     instanceObject.diagramName = diagramName;
