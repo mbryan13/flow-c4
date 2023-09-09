@@ -2,9 +2,10 @@ import { useCallback, useState, createRef, useEffect } from 'react';
 import { Handle } from 'reactflow';
 
 const handlePositions = [
-  [10,0], [0,5], [0, 45], [0, 55], [0, 95], [10, 100],
-  [42,100], [57, 100], [57, 0], [42, 0],
-  [90, 0], [100, 5], [100, 55], [100, 45], [100, 95], [90, 100], 
+  [0,10], [10,0], [0, 95], [0, 75], [10, 180], [0, 170],  // left side
+  [140,180], [160, 180], [300, 170], [290, 180], // bottom side
+  [300, 75], [300, 95], [290, 0], [300, 10], // right side 
+  [160, 0], [140, 0] // top side 
 ]
 
 function GenericNode({ data, isConnectable, id }) {
@@ -41,7 +42,7 @@ function GenericNode({ data, isConnectable, id }) {
 
   useEffect(() => {
     Object.keys(handleRefs).forEach((key) => {
-      handleRefs[key].current.style.opacity = nodeIsHovered ? 0.2 : 0;
+      handleRefs[key].current.style.opacity = !nodeIsHovered ? 0.2 : 0;
     })
   }, [nodeIsHovered]);
 
@@ -50,11 +51,11 @@ function GenericNode({ data, isConnectable, id }) {
     const handles = handlePositions.map((position, index) => {
       const handleRef = handleRefs[alphabet[index]];
       const handleType = index % 2 === 0 ? 'source' : 'target';
-      const topNudge = -5;
+      const topNudge = -10;
       const leftNudge = 0;
       const style = {
-        top: `${position[0] + topNudge}%`,
-        left: `${position[1] + leftNudge}%`,
+        top: `${position[1] + topNudge}px`,
+        left: `${position[0] + leftNudge}px`,
         backgroundColor: handleType === 'target' ? 'red' : 'green',
         width: '20px',
         height: '20px'
