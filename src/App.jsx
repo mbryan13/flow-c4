@@ -15,11 +15,12 @@ function App() {
   const { project, setViewport } = reactFlowInstance;
   const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
 
-  const [prevDiagramName, setPrevDiagramName] = React.useState('');
-  const [diagramName, setDiagramName] = React.useState('Banking System');
+  const [diagramName, setDiagramName] = React.useState(null);
+  const [savedDiagramName, setSavedDiagramName] = React.useState(null);
   const [diagramLastUpdated, setDiagramLastUpdated] = React.useState('');
   const [diagramDescription, setDiagramDescription] = React.useState('');
-  const [diagramHistory, setDiagramHistory] = React.useState([]);
+  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = React.useState([]);
+  const [diagramForwardsHistory, setDiagramForwardsHistory] = React.useState([]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -32,6 +33,28 @@ function App() {
   }, eds)
   }), [setEdges]);
 
+  const moveDiagramFromBackwardsHistoryToForwardsHistory = useCallback(() => {
+    if(diagramBackwardsHistory.length === 1) return;
+    const mostRecentBackwardsHistoryDiagram = diagramBackwardsHistory[diagramBackwardsHistory.length - 1];
+
+    const newDiagramForwardsHistory = diagramForwardsHistory.concat(mostRecentBackwardsHistoryDiagram);
+    setDiagramForwardsHistory(newDiagramForwardsHistory);
+
+    const newDiagramBackwardsHistory = diagramBackwardsHistory.slice(0, diagramBackwardsHistory.length - 1);
+    setDiagramBackwardsHistory(newDiagramBackwardsHistory);
+  }, [diagramForwardsHistory, diagramBackwardsHistory]);
+
+  const moveDiagramFromForwardsHistoryToBackwardsHistory = useCallback(() => {
+    if(diagramForwardsHistory.length === 0) return;
+    const mostRecentForwardsHistoryDiagram = diagramForwardsHistory[diagramForwardsHistory.length - 1];
+
+    const newDiagramForwardsHistory = diagramForwardsHistory.slice(0, diagramForwardsHistory.length - 1);
+    setDiagramForwardsHistory(newDiagramForwardsHistory);
+
+    const newDiagramBackwardsHistory = diagramBackwardsHistory.concat(mostRecentForwardsHistoryDiagram);
+    setDiagramBackwardsHistory(newDiagramBackwardsHistory);
+  }, [diagramForwardsHistory, diagramBackwardsHistory])
+
   const createNewDiagram = React.useCallback(() => {
     const instanceObject = {
       nodes: [],
@@ -43,15 +66,42 @@ function App() {
       },
     }
     localStorage.setItem('New Diagram', JSON.stringify(instanceObject));
-    // push to diagram history
-    setDiagramHistory(diagramHistory.concat(diagramName));
-    setDiagramName('New Diagram');
-    setPrevDiagramName(' ');
-  })
+    setDiagramBackwardsHistory(diagramBackwardsHistory.concat('New Diagram'));
+  }, [diagramBackwardsHistory]);
 
   React.useEffect(() => {
-    console.log(diagramHistory, diagramName)
-  }, [diagramHistory])
+    const newDiagramName = diagramBackwardsHistory[diagramBackwardsHistory.length - 1];
+    console.log('new diagram name: ', newDiagramName);
+    setDiagramDescription('');
+    setSavedDiagramName(newDiagramName);
+    setDiagramName(newDiagramName);
+  }, [diagramBackwardsHistory])
+
+  React.useEffect(() => {
+    console.log('diagram backwards history: ', diagramBackwardsHistory);
+    console.log('diagram forwards history: ', diagramForwardsHistory);
+  }, [diagramForwardsHistory, diagramBackwardsHistory]);
+
+  React.useEffect(() => {
+    // console.log('loading diagram: ', savedDiagramName);
+    if(!savedDiagramName) return;
+    const diagram = localStorage.getItem(savedDiagramName);
+    if(!diagram) return;
+    console.log('loading diagram: ', savedDiagramName);
+    const parsedDiagram = JSON.parse(diagram);
+    parsedDiagram.nodes.forEach((node) => {
+      node.data?.functions?.forEach((funcName) => {
+        node.data[funcName] = nodeFunctions[funcName];
+      });
+    });
+    setNodes(parsedDiagram.nodes)
+    setEdges(parsedDiagram.edges)
+    setViewport(parsedDiagram.viewport);
+    setDiagramLastUpdated(parsedDiagram.lastUpdated);
+    setDiagramDescription(parsedDiagram.diagramDescription);
+  
+  }, [savedDiagramName]);
+
 
   const onEdgeClick = React.useCallback((event, edge) => {
     if(!event.ctrlKey) return;
@@ -62,7 +112,7 @@ function App() {
   // React.useEffect(() => {
   //   for (const key in localStorage) {
   //     console.log(key);
-  //     if(key !== diagramName) localStorage.removeItem(key);
+  //     if(key !== 'Bkanking System') localStorage.removeItem(key);
   //   }
   //   console.log(localStorage)
   // }, []);
@@ -85,7 +135,12 @@ function App() {
   }, []);
 
   const saveDiagram = useCallback((diagramName, diagramDescription) => {
-    console.log('saving diagram')
+    if(diagramName !== savedDiagramName) {
+      console.log('names do not match');
+      // replace the most recent diagram in the backwards history with the new diagram name
+      const newDiagramBackwardsHistory = diagramBackwardsHistory.slice(0, diagramBackwardsHistory.length - 1).concat(diagramName);
+      setDiagramBackwardsHistory(newDiagramBackwardsHistory);
+    }
     const formatDate = (date) => {
       // ex. Wednesday, March 22 at 4:30 PM UTC
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -103,13 +158,16 @@ function App() {
     };
     const instanceObject = reactFlowInstance.toObject();
     const lastUpdated = formatDate(new Date());
-    instanceObject.lastUpdated = lastUpdated;
+
     setDiagramLastUpdated(lastUpdated);
-    console.log(diagramDescription)
+
+    instanceObject.lastUpdated = lastUpdated;
     instanceObject.diagramName = diagramName;
     instanceObject.diagramDescription = diagramDescription;
+
+    console.log('saving to local storage: ', diagramName);
     localStorage.setItem(diagramName, JSON.stringify(instanceObject));
-  }, [reactFlowInstance]);
+  }, [reactFlowInstance, diagramBackwardsHistory, savedDiagramName]);
 
   const nodeFunctions = {
     modifyText
@@ -118,36 +176,17 @@ function App() {
   const handleDiagramNameChange = React.useCallback((event) => {
     if(event.key !== 'Enter') return setDiagramName(event.target.value);
     console.log(localStorage)
-    if(prevDiagramName === '') localStorage.removeItem(diagramName);
-    else if(prevDiagramName !== diagramName && localStorage.hasOwnProperty(prevDiagramName)) localStorage.removeItem(prevDiagramName);
-    setPrevDiagramName(diagramName);
     saveDiagram(diagramName, diagramDescription);
-  }, [setDiagramName, diagramName, diagramDescription, saveDiagram, prevDiagramName, setPrevDiagramName]);
+  }, [setDiagramName, diagramName, diagramDescription, saveDiagram]);
 
 
-  React.useEffect(() => {
-    console.log('loading diagram: ', diagramName);
-    const diagram = localStorage.getItem(diagramName);
-    if(!diagram) return;
-    const parsedDiagram = JSON.parse(diagram);
-    parsedDiagram.nodes.forEach((node) => {
-      node.data?.functions?.forEach((funcName) => {
-        node.data[funcName] = nodeFunctions[funcName];
-      });
-    });
-    setNodes(parsedDiagram.nodes)
-    setEdges(parsedDiagram.edges)
-    setViewport(parsedDiagram.viewport);
-    setDiagramLastUpdated(parsedDiagram.lastUpdated);
-    setDiagramDescription(parsedDiagram.diagramDescription);
-  }, [diagramName]);
 
   React.useEffect(() => {
-    const intervalID = setInterval(() => saveDiagram(diagramName, diagramDescription), 5000); 
+    const intervalID = setInterval(() => saveDiagram(diagramName, diagramDescription), 10000); 
     return () => {
       clearInterval(intervalID);
     }
-  }, [saveDiagram, diagramName, diagramDescription]);
+  }, [saveDiagram, diagramName, diagramDescription, savedDiagramName]);
 
   const onNodeClick = React.useCallback((event, node) => {
     if(!event.ctrlKey || !event.shiftKey) return;
@@ -193,6 +232,9 @@ function App() {
           position: project({ x: mousePosition.x - left - 150, y: mousePosition.y - top - 75 }),
           data: {
             functions: ['modifyText'],
+            title: '',
+            subtitle: '',
+            description: '',
             modifyText
           },
         };
@@ -201,7 +243,7 @@ function App() {
     }, [setNodes, mousePosition, project, modifyText])
 
 
-  // add event listeners for f keypress
+  // add event listeners
   React.useEffect(() => {
     const handleKeyPress = (event) => {
       if (event.key === 'f' && event.ctrlKey) {  
@@ -216,11 +258,12 @@ function App() {
     const handleMouseDown = (event) => {
       switch(event.button) {
         case 3:
-          if(diagramHistory.length === 0) return;
-          setDiagramHistory(diagramHistory.slice(0, diagramHistory.length - 1));
-          setDiagramName(diagramHistory[diagramHistory.length - 1]);
+          setDiagramName(null);
+          moveDiagramFromBackwardsHistoryToForwardsHistory();
           break;
         case 4:
+          setDiagramName(null);
+          moveDiagramFromForwardsHistoryToBackwardsHistory();
           break;
         default:
           break;
@@ -234,7 +277,7 @@ function App() {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mousedown', handleMouseDown);
     }
-  }, [mousePosition, setMousePosition, addNode]);
+  }, [mousePosition, setMousePosition, addNode, moveDiagramFromBackwardsHistoryToForwardsHistory, moveDiagramFromForwardsHistoryToBackwardsHistory]);
 
   return (
     <div style={{ width: '95vw', height: '95vh' }} ref={reactFlowWrapper}>
@@ -255,7 +298,7 @@ function App() {
       >
         <Background color="#aaa" gap={30} />
       </ReactFlow>
-      <input type="text" className="diagram-input diagram-name" placeholder='Enter diagram name here...' value={diagramName} onKeyDown={handleDiagramNameChange} onChange={(e) => setDiagramName(e.target.value)} />
+      <input type="text" className="diagram-input diagram-name" placeholder='Enter diagram name here...' value={diagramName || savedDiagramName} onKeyDown={handleDiagramNameChange} onChange={(e) => setDiagramName(e.target.value)} />
       <input type="text" className="diagram-input diagram-description" placeholder='Enter diagram description here...' value={diagramDescription} onChange={(e) => setDiagramDescription(e.target.value)} />
       <div className='diagram-last-updated-date'>{diagramLastUpdated}</div>
     </div>
