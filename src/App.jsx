@@ -5,7 +5,7 @@ import Toolbar from './components/Toolbar';
 
 function App() {
   const [savedDiagramName, setSavedDiagramName] = useState(null);
-  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = useState([]);
+  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = useState(['test', 'linked']);
   const [diagramForwardsHistory, setDiagramForwardsHistory] = useState([]);
 
 

@@ -35,17 +35,27 @@ export default function CustomEdge(props) {
   }, [label])
 
   useEffect(() => {
-    console.log('label height changed: ', labelHeight)
     if(textAreaRef.current) {
-      textAreaRef.current.style.height = labelHeight;
+      if(label.length <= 20) {
+        textAreaRef.current.style.height = 'auto';
+        textAreaRef.current.style.width = label.length * 8 + 'px';
+      }
+      else textAreaRef.current.style.height = labelHeight;
     }
   }, [labelHeight])
 
   const resizeTextArea = () => {
     if (textAreaRef.current) {
       console.log('resizing text area')
-      textAreaRef.current.style.height = "auto";
-      textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight - 15}px`;
+      const labelLength = textAreaRef.current.value.length;
+      if(labelLength <= 20) {
+        textAreaRef.current.style.height = 'auto';
+        textAreaRef.current.style.width = labelLength * 8 + 'px';
+      }
+      else {
+        textAreaRef.current.style.height = "auto";
+        textAreaRef.current.style.height = `${textAreaRef.current.scrollHeight - 15}px`;
+      }
     }
   };
 

@@ -84,7 +84,7 @@
 .edgelabel {
   min-width: 50px;
   max-width: 200px;
-  width: auto;
+  width: 50px;
   height: auto;
   text-align: center;
   /* height: 20px; */
@@ -122,7 +122,7 @@
 }
 
 .drag-handle {
-  width: 80%;
+  width: 60%;
   height: 10px;
   position: absolute;
   top: 15px;
@@ -208,6 +208,41 @@
   left: 17px;
   color: grey;
   /* font-size: 25px; */
+}
+
+.diagram-link {
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  color: white;
+  /* background-color: grey; */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.context-menu {
+  background: white;
+  border-style: solid;
+  box-shadow: 10px 19px 20px rgba(0, 0, 0, 10%);
+  position: absolute;
+  z-index: 10;
+}
+
+.context-menu button {
+  border: none;
+  display: block;
+  padding: 0.5em;
+  text-align: left;
+  width: 100%;
+}
+
+.context-menu button:hover {
+  background: white;
 }
 
 

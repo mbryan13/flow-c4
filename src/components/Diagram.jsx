@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import GenericNode from '../nodes/GenericNode';
 import CustomEdge from '../edges/CustomEdge';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, useReactFlow, ReactFlowProvider, MarkerType, Background } from 'reactflow';
+import ContextMenu from './ContextMenu.jsx';
 
 const nodeTypes = {
   genericNode: GenericNode,
@@ -13,6 +14,7 @@ const edgeTypes = {
 
 const Diagram = (props) => {
   const { savedDiagramName, saveDiagram, createNewDiagram, openDiagram } = props;
+  const [menu, setMenu] = useState(null);
   const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useReactFlow();
   const { project, setViewport } = reactFlowInstance;
@@ -33,6 +35,29 @@ const Diagram = (props) => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [lineType, setLineType] = useState('straight');
   const [selectedNode, setSelectedNode] = useState();
+
+  const onNodeContextMenu = useCallback(
+    (event, node) => {
+      console.log('node context menu', node)
+      // Prevent native context menu from showing
+      event.preventDefault();
+
+      // Calculate position of the context menu. We want to make sure it
+      // doesn't get positioned off-screen.
+      const pane = reactFlowWrapper.current.getBoundingClientRect();
+      setMenu({
+        id: node.id,
+        top: event.clientY < pane.height - 200 && event.clientY,
+        left: event.clientX < pane.width - 200 && event.clientX,
+        right: event.clientX >= pane.width - 200 && pane.width - event.clientX,
+        bottom: event.clientY >= pane.height - 200 && pane.height - event.clientY,
+      });
+    },
+    [setMenu]
+  );
+
+  // Close the context menu if it's open whenever the window is clicked.
+  const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
 
   const updateEdgeLabel = useCallback((newLabel, edgeID, labelHeight) => {
     setEdges((currentEdges) => {
@@ -83,6 +108,24 @@ const Diagram = (props) => {
     });
   }, [setNodes]);
 
+  const linkDiagram = useCallback((id, linkedDiagramName) => {
+    // update node with linked diagram name
+    console.log('linking diagram: ', id, linkedDiagramName)
+    setNodes((currentNodes) => {
+      const newNodes = currentNodes.map((node) => {
+        if(node.id !== id) return node;
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            link: 'test'
+          }
+        }
+      });
+      return newNodes;
+    });
+  }, [setNodes]);
+
 
   const onEdgeClick = useCallback((event, edge) => {
     if(!event.ctrlKey) {
@@ -113,16 +156,17 @@ const Diagram = (props) => {
         dragHandle: '.drag-handle',
         position: project({ x: mousePosition.x - left - 150, y: mousePosition.y - top - 75 }),
         data: {
-          functions: ['modifyText'],
+          functions: ['modifyText', 'openDiagram'],
           title: '',
           subtitle: '',
           description: '',
-          modifyText
+          modifyText,
+          openDiagram
         },
       };
       return currentNodes.concat(newNode);
     });
-  }, [setNodes, mousePosition, project, modifyText])
+  }, [setNodes, mousePosition, project, modifyText, openDiagram]);
 
 
   const onNodeClick = useCallback((event, node) => {
@@ -144,7 +188,8 @@ const Diagram = (props) => {
   // load diagram from local storage
   useEffect(() => {
     const nodeFunctions = {
-      modifyText
+      modifyText,
+      openDiagram
     };
 
     const edgeFunctions = {
@@ -172,7 +217,7 @@ const Diagram = (props) => {
     setDiagramName(savedDiagramName);
     setDiagramLastUpdated(parsedDiagram.lastUpdated);
   
-  }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText, updateEdgeLabel]); 
+  }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText, openDiagram, updateEdgeLabel]); 
 
   // update which node is being hovered over
   useEffect(() => {
@@ -218,7 +263,7 @@ const Diagram = (props) => {
         document.removeEventListener('mousemove', handleMouseMove);
       }
     }, [mousePosition, setMousePosition, addNode, reactFlowInstance, saveDiagram, diagramName, diagramDescription]);
-
+      
   if(!savedDiagramName) return (
     <div>
       <button onClick={createNewDiagram}>Create New Diagram</button>
@@ -241,8 +286,11 @@ const Diagram = (props) => {
         onNodeClick={onNodeClick}
         onNodeMouseEnter={onNodeMouseEnter}
         onNodeMouseLeave={onNodeMouseLeave}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneClick={onPaneClick}
       >
         <Background color="#aaa" gap={30} />
+        {menu && <ContextMenu {...menu} onClick={onPaneClick} linkDiagram={linkDiagram} />}
       </ReactFlow>
       <input type="text" className="diagram-input diagram-name" placeholder='Enter diagram name here...' value={diagramName || savedDiagramName} onKeyDown={handleDiagramNameChange} onChange={(e) => setDiagramName(e.target.value)} />
       <input type="text" className="diagram-input diagram-description" placeholder='Enter diagram description here...' value={diagramDescription} onChange={(e) => setDiagramDescription(e.target.value)} />

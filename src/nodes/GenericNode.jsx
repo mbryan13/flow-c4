@@ -1,4 +1,5 @@
 import { useCallback, useState, createRef, useEffect } from 'react';
+import { CiLink } from 'react-icons/ci';
 import { Handle } from 'reactflow';
 
 const handlePositions = [
@@ -9,7 +10,7 @@ const handlePositions = [
 ]
 
 function GenericNode({ data, isConnectable, id }) {
-  const { isHovered: nodeIsHovered, modifyText, title, subtitle, description } = data;
+  const { isHovered: nodeIsHovered, modifyText, openDiagram, title, subtitle, description, link } = data;
   const [handleRefs, setHandleRefs] = useState({
     a: createRef(),
     b: createRef(),
@@ -80,6 +81,7 @@ function GenericNode({ data, isConnectable, id }) {
   return (
     <div className="text-updater-node" >
       <div className='drag-handle'></div>
+      {data.link && <div onClick={() => openDiagram(link)} className='diagram-link'><CiLink/></div>}
       <input type="text" className="nodrag generic-input input-title" value={title} onChange={(e) => modifyText(e, 'title', id)} />
       <input type="text" className="nodrag generic-input input-subtitle" value={subtitle} onChange={(e) => modifyText(e, 'subtitle', id)} />
       <textarea type="text" className="nodrag generic-input input-description" value={description} onChange={(e) => modifyText(e, 'description', id)} />
