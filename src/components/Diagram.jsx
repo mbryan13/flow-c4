@@ -241,7 +241,6 @@ const Diagram = (props) => {
     useEffect(() => {
       const handleKeyPress = (event) => {
         if (event.key === 'f' && event.ctrlKey) {  
-          console.log(mousePosition)
           addNode();
         }
         if (event.key === 's' && event.ctrlKey) {
@@ -262,7 +261,7 @@ const Diagram = (props) => {
         document.removeEventListener('keydown', handleKeyPress);
         document.removeEventListener('mousemove', handleMouseMove);
       }
-    }, [mousePosition, setMousePosition, addNode, reactFlowInstance, saveDiagram, diagramName, diagramDescription]);
+    }, [setMousePosition, addNode, reactFlowInstance, saveDiagram, diagramName, diagramDescription]);
       
   if(!savedDiagramName) return (
     <div>
