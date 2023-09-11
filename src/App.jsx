@@ -56,6 +56,7 @@ function App() {
   }, []);
 
   const openDiagram = useCallback((diagramName) => {
+    setPendingDiagramChanges(false);
     setDiagramForwardsHistory([]);
     setDiagramBackwardsHistory(diagramBackwardsHistory.concat(diagramName));
   }, [diagramBackwardsHistory]);

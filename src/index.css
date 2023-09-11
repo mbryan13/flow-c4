@@ -4,6 +4,11 @@
   opacity: 0;
 }
 
+/* create body styles */
+body {
+  margin: 0;
+}
+
 /* .react-flow .react-flow__handle-top {
   top: -10px;
 }
@@ -247,11 +252,6 @@
 
 .diagram-link:hover {
   color: rgb(255, 221, 3);
-}
-
-.diagram-link-form {
-  position: absolute;
-  z-index: 100;
 }
 
 .context-menu {

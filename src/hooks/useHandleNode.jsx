@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 
 function useHandleNode (nodes, edges, setEdges, setSelectedNode, setNodes, reactFlowWrapper, mousePosition, project, openDiagram, setPendingDiagramChanges, setMenu) {
 

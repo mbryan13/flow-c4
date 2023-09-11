@@ -15,9 +15,24 @@ const DiagramLinkForm = (props) => {
     linkDiagram(type, id, diagramName);
     closeForm();
   }
+
+  const styles = {
+    root: {
+      position: 'absolute',
+      zIndex: '100',
+      top: formLocation.top,
+      left: formLocation.left,
+      display: 'flex',
+      gap: '2px',
+      backgroundColor: 'rgba(37, 37, 37, .9)',
+      padding: '5px',
+      borderRadius: '2px',
+      border: '1px solid grey'
+    }
+  }
   return (
-    <form onSubmit={handleSubmit} style={{ position: 'absolute', zIndex: '100', top: formLocation.top, left: formLocation.left }}>
-      <input ref={inputRef} placeholder='Enter name of diagram to link...' type="text" name="diagramName" id="diagramName" />
+    <form onSubmit={handleSubmit} style={styles.root}>
+      <input ref={inputRef} placeholder='Enter diagram name to link...' type="text" name="diagramName" id="diagramName" />
       <button type="submit">Link</button>
       <button onClick={closeForm}>Cancel</button>
     </form>
