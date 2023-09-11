@@ -192,10 +192,10 @@ const Diagram = (props) => {
 
     setNodes(parsedDiagram.nodes)
     setEdges(parsedDiagram.edges)
-    setViewport(parsedDiagram.viewport);
     setDiagramDescription(parsedDiagram.diagramDescription || '');
     setDiagramName(savedDiagramName);
     setDiagramLastUpdated(parsedDiagram.lastUpdated);
+    setViewport(parsedDiagram.viewport);
   
   }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText, openDiagram, updateEdgeLabel]); 
 
@@ -310,7 +310,7 @@ export default (props) => (
 )
 
 function formatDate(date) {
-  // ex. Wednesday, March 22 at 4:30 PM UTC
+  // ex. Wednesday, March 22 at 4:30 PM PST
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
     'October', 'November', 'December'];
@@ -322,5 +322,5 @@ function formatDate(date) {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
   const formattedMinute = minute < 10 ? `0${minute}` : minute;
-  return `${day}, ${month} ${dayOfMonth} at ${formattedHour}:${formattedMinute} ${ampm} UTC`;
+  return `${day}, ${month} ${dayOfMonth} at ${formattedHour}:${formattedMinute} ${ampm} PST`;
 }
