@@ -202,12 +202,24 @@
   background: transparent;
   border: none;
 }
-.diagram-last-updated-date {
+.diagram-last-updated-container {
   position: absolute;
   bottom: 10px;
   left: 17px;
   color: grey;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   /* font-size: 25px; */
+}
+
+.pending-icon {
+  color: rgb(255, 221, 3);
+}
+
+.check-icon {
+  color: rgb(5, 161, 5);
 }
 
 .diagram-link {
@@ -223,6 +235,23 @@
   height: 30px;
   font-size: 30px;
   cursor: pointer;
+}
+
+.link-input {
+  position: absolute;
+  top: 35px;
+  left: 70px;
+  background-color: white;
+  border: 1px solid black;
+}
+
+.diagram-link:hover {
+  color: rgb(255, 221, 3);
+}
+
+.diagram-link-form {
+  position: absolute;
+  z-index: 100;
 }
 
 .context-menu {

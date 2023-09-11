@@ -1,7 +1,7 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useReactFlow } from 'reactflow';
 
-export default function ContextMenu({ linkDiagram, id, top, left, right, bottom, ...props }) {
+export default function ContextMenu({ setDiagramLink, id, top, left, right, bottom, ...props }) {
   const { getNode, setNodes, addNodes, setEdges } = useReactFlow();
   const duplicateNode = useCallback(() => {
     const node = getNode(id);
@@ -23,7 +23,7 @@ export default function ContextMenu({ linkDiagram, id, top, left, right, bottom,
       <p style={{ margin: '0.5em' }}>
         <small>node: {id}</small>
       </p>
-      <button onClick={() => linkDiagram(id)}>Link</button>
+      <button onClick={() => setDiagramLink({ type: 'node', id })}>Link</button>
       <button onClick={duplicateNode}>duplicate</button>
       <button onClick={deleteNode}>delete</button>
     </div>

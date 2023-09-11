@@ -5,8 +5,9 @@ import Toolbar from './components/Toolbar';
 
 function App() {
   const [savedDiagramName, setSavedDiagramName] = useState(null);
-  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = useState(['test', 'linked']);
+  const [diagramBackwardsHistory, setDiagramBackwardsHistory] = useState(['Podium']);
   const [diagramForwardsHistory, setDiagramForwardsHistory] = useState([]);
+  const [pendingDiagramChanges, setPendingDiagramChanges] = useState(false);
 
 
   const moveDiagramFromBackwardsHistoryToForwardsHistory = useCallback(() => {
@@ -42,10 +43,20 @@ function App() {
       },
     }
     localStorage.setItem('New Diagram', JSON.stringify(instanceObject));
+    setDiagramForwardsHistory([]);
     setDiagramBackwardsHistory(diagramBackwardsHistory.concat('New Diagram'));
   }, [diagramBackwardsHistory]);
+  
+
+  const diagramExists = useCallback((diagramName) => {
+    for (const key in localStorage) {
+      if(key === diagramName) return true;
+    }
+    return false;
+  }, []);
 
   const openDiagram = useCallback((diagramName) => {
+    setDiagramForwardsHistory([]);
     setDiagramBackwardsHistory(diagramBackwardsHistory.concat(diagramName));
   }, [diagramBackwardsHistory]);
 
@@ -64,6 +75,7 @@ function App() {
     instanceObject.diagramDescription = diagramDescription;
 
     localStorage.setItem(diagramName, JSON.stringify(instanceObject));
+    setPendingDiagramChanges(false);
   }, [diagramBackwardsHistory, savedDiagramName]);
 
   useEffect(() => {
@@ -114,6 +126,8 @@ function App() {
           saveDiagram={saveDiagram}
           createNewDiagram={createNewDiagram}
           openDiagram={openDiagram}
+          pendingDiagramChanges={pendingDiagramChanges}
+          setPendingDiagramChanges={setPendingDiagramChanges}
         />
       </>
   );

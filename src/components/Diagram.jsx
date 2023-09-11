@@ -3,6 +3,9 @@ import GenericNode from '../nodes/GenericNode';
 import CustomEdge from '../edges/CustomEdge';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, useReactFlow, ReactFlowProvider, MarkerType, Background } from 'reactflow';
 import ContextMenu from './ContextMenu.jsx';
+import DiagramLinkForm from './DiagramLinkForm';
+import { MdPending } from 'react-icons/md';
+import { AiFillCheckCircle } from 'react-icons/ai';
 
 const nodeTypes = {
   genericNode: GenericNode,
@@ -13,7 +16,7 @@ const edgeTypes = {
 }
 
 const Diagram = (props) => {
-  const { savedDiagramName, saveDiagram, createNewDiagram, openDiagram } = props;
+  const { savedDiagramName, saveDiagram, createNewDiagram, openDiagram, pendingDiagramChanges, setPendingDiagramChanges } = props;
   const [menu, setMenu] = useState(null);
   const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useReactFlow();
@@ -23,12 +26,15 @@ const Diagram = (props) => {
   const [diagramName, setDiagramName] = useState(null);
   const [diagramDescription, setDiagramDescription] = useState('');
   const [diagramLastUpdated, setDiagramLastUpdated] = useState('');
-
+  const [diagramLink, setDiagramLink] = useState(null);
+  
   const [markers, setMarkers] = useState({
     start: { type: null, color: 'black' },
     end: { type: MarkerType.ArrowClosed, color: 'black' },
     isAnimated: true
   });
+
+
 
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -38,7 +44,6 @@ const Diagram = (props) => {
 
   const onNodeContextMenu = useCallback(
     (event, node) => {
-      console.log('node context menu', node)
       // Prevent native context menu from showing
       event.preventDefault();
 
@@ -74,22 +79,26 @@ const Diagram = (props) => {
       });
       return newEdges;
     });
-  }, [setEdges]);
+    setPendingDiagramChanges(true);
+  }, [setEdges, setPendingDiagramChanges]);
 
   const onConnect = useCallback((params) => setEdges((eds) => {
-    console.log(params, eds)
     return addEdge({...params, type: 'custom', data: { functions: ['updateEdgeLabel'], updateEdgeLabel }, animated: markers.isAnimated, markerStart: { type: markers.start.type, color: markers.start.color }, markerEnd: { type: markers.end.type, color: markers.end.color },
   }, eds)
-  }), [setEdges]);
+  }), [setEdges, markers, updateEdgeLabel]);
+
+  const getDiagramState = useCallback(() => {
+    const instanceObject = reactFlowInstance.toObject();
+    const lastUpdated = formatDate(new Date());
+    return { instanceObject, lastUpdated, diagramName, diagramDescription };
+  }, [reactFlowInstance, diagramName, diagramDescription]);
 
   const handleDiagramNameChange = useCallback((event) => {
     if(event.key !== 'Enter') return setDiagramName(event.target.value);
-    console.log(localStorage)
-    const instanceObject = reactFlowInstance.toObject();
-    const lastUpdated = formatDate(new Date());
+    const { instanceObject, lastUpdated, diagramName, diagramDescription } = getDiagramState();
     setDiagramLastUpdated(lastUpdated);
     saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
-  }, [reactFlowInstance, setDiagramName, diagramName, diagramDescription, saveDiagram]);
+  }, [setDiagramName, saveDiagram, getDiagramState]);
 
   const modifyText = useCallback((event, textType, nodeID) => {
     const inputText = event.target.value;
@@ -108,28 +117,45 @@ const Diagram = (props) => {
     });
   }, [setNodes]);
 
-  const linkDiagram = useCallback((id, linkedDiagramName) => {
+  const linkDiagram = useCallback((type, id, linkedDiagramName) => {
     // update node with linked diagram name
-    console.log('linking diagram: ', id, linkedDiagramName)
-    setNodes((currentNodes) => {
-      const newNodes = currentNodes.map((node) => {
-        if(node.id !== id) return node;
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            link: 'test'
+    const addNodeLink = (id, linkedDiagramName) => {
+      setNodes((currentNodes) => {
+        const newNodes = currentNodes.map((node) => {
+          if(node.id !== id) return node;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              link: linkedDiagramName
+            }
           }
-        }
+        });
+        return newNodes;
       });
-      return newNodes;
-    });
-  }, [setNodes]);
-
+    }
+    const addEdgeLink = (id, linkedDiagramName) => {
+      setEdges((currentEdges) => {
+        const newEdges = currentEdges.map((edge) => {
+          if(edge.id !== id) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              link: linkedDiagramName
+            }
+          }
+        });
+        return newEdges;
+      });
+    }
+    if(type === 'node') addNodeLink(id, linkedDiagramName);
+    if(type === 'edge') addEdgeLink(id, linkedDiagramName);
+    setPendingDiagramChanges(true);
+  }, [setNodes, setEdges, setPendingDiagramChanges]);
 
   const onEdgeClick = useCallback((event, edge) => {
     if(!event.ctrlKey) {
-      console.log(edge);
       const newEdges = edges.map((e) => {
         if(e.id === edge.id) {
           if(!e.label) {
@@ -141,11 +167,12 @@ const Diagram = (props) => {
         }
         return e;
       });
+      setPendingDiagramChanges(true);
       return setEdges(newEdges);
     }
     const newEdges = edges.filter((e) => e.id !== edge.id);
     setEdges(newEdges);
-  }, [edges, setEdges]);
+  }, [edges, setEdges, setPendingDiagramChanges]);
 
   const addNode = useCallback(() => {
     setNodes((currentNodes) => {
@@ -166,7 +193,8 @@ const Diagram = (props) => {
       };
       return currentNodes.concat(newNode);
     });
-  }, [setNodes, mousePosition, project, modifyText, openDiagram]);
+    setPendingDiagramChanges(true);
+  }, [setNodes, mousePosition, project, modifyText, openDiagram, setPendingDiagramChanges]);
 
 
   const onNodeClick = useCallback((event, node) => {
@@ -175,7 +203,8 @@ const Diagram = (props) => {
     setNodes(newNodes);
     const newEdges = edges.filter((e) => e.source !== node.id && e.target !== node.id);
     setEdges(newEdges);
-  }, [nodes, edges, setNodes, setEdges]);
+    setPendingDiagramChanges(true);
+  }, [nodes, edges, setNodes, setEdges, setPendingDiagramChanges]);
 
   const onNodeMouseEnter = useCallback((event, node) => {
     setSelectedNode(node);
@@ -196,9 +225,20 @@ const Diagram = (props) => {
       updateEdgeLabel
     };
     if(!savedDiagramName) return;
-    const diagram = localStorage.getItem(savedDiagramName);
-    if(!diagram) return;
-    console.log('loading diagram: ', savedDiagramName);
+    let diagram = localStorage.getItem(savedDiagramName);
+    if(!diagram) {
+      const instanceObject = {
+        nodes: [],
+        edges: [],
+        viewport: {
+          x: 0,
+          y: 0,
+          zoom: 1
+        },
+      }
+      localStorage.setItem(savedDiagramName, JSON.stringify(instanceObject));
+      diagram = localStorage.getItem(savedDiagramName);
+    }
     const parsedDiagram = JSON.parse(diagram);
     parsedDiagram.nodes.forEach((node) => {
       node.data?.functions?.forEach((funcName) => {
@@ -235,7 +275,7 @@ const Diagram = (props) => {
       });
       return newNodes;
     });
-  }, [selectedNode]);
+  }, [selectedNode, setNodes]);
 
     // add event listeners
     useEffect(() => {
@@ -244,7 +284,6 @@ const Diagram = (props) => {
           addNode();
         }
         if (event.key === 's' && event.ctrlKey) {
-          console.log('saving diagram')
           const instanceObject = reactFlowInstance.toObject();
           const lastUpdated = formatDate(new Date());
           setDiagramLastUpdated(lastUpdated);
@@ -280,7 +319,7 @@ const Diagram = (props) => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         snapGrid={[30, 30]}
-        // snapToGrid={true}
+        snapToGrid={true}
         onEdgeClick={onEdgeClick}
         onNodeClick={onNodeClick}
         onNodeMouseEnter={onNodeMouseEnter}
@@ -289,11 +328,15 @@ const Diagram = (props) => {
         onPaneClick={onPaneClick}
       >
         <Background color="#aaa" gap={30} />
-        {menu && <ContextMenu {...menu} onClick={onPaneClick} linkDiagram={linkDiagram} />}
+        {menu && <ContextMenu {...menu} onClick={onPaneClick} setDiagramLink={setDiagramLink} />}
+        {diagramLink && <DiagramLinkForm closeForm={() => setDiagramLink(null)} linkDiagram={linkDiagram} type={diagramLink.type} id={diagramLink.id} mouseX={mousePosition.x} mouseY={mousePosition.y} />}
       </ReactFlow>
       <input type="text" className="diagram-input diagram-name" placeholder='Enter diagram name here...' value={diagramName || savedDiagramName} onKeyDown={handleDiagramNameChange} onChange={(e) => setDiagramName(e.target.value)} />
       <input type="text" className="diagram-input diagram-description" placeholder='Enter diagram description here...' value={diagramDescription} onChange={(e) => setDiagramDescription(e.target.value)} />
-      <div className='diagram-last-updated-date'>{diagramLastUpdated}</div>
+      <div className='diagram-last-updated-container'>
+        {pendingDiagramChanges ? <MdPending className='pending-icon'/> : <AiFillCheckCircle className='check-icon'/>}
+        {diagramLastUpdated}
+      </div>
     </div>  
   )
 }
@@ -318,4 +361,4 @@ function formatDate(date) {
   const formattedHour = hour % 12 === 0 ? 12 : hour % 12;
   const formattedMinute = minute < 10 ? `0${minute}` : minute;
   return `${day}, ${month} ${dayOfMonth} at ${formattedHour}:${formattedMinute} ${ampm} UTC`;
-};
+}

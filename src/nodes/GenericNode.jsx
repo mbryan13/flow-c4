@@ -84,7 +84,7 @@ function GenericNode({ data, isConnectable, id }) {
       {data.link && <div onClick={() => openDiagram(link)} className='diagram-link'><CiLink/></div>}
       <input type="text" className="nodrag generic-input input-title" value={title} onChange={(e) => modifyText(e, 'title', id)} />
       <input type="text" className="nodrag generic-input input-subtitle" value={subtitle} onChange={(e) => modifyText(e, 'subtitle', id)} />
-      <textarea type="text" className="nodrag generic-input input-description" value={description} onChange={(e) => modifyText(e, 'description', id)} />
+      <textarea spellCheck='false' type="text" className="nodrag generic-input input-description" value={description} onChange={(e) => modifyText(e, 'description', id)} />
       {renderHandles()}
     </div>
   );
