@@ -6,6 +6,7 @@ import ContextMenu from './ContextMenu.jsx';
 import DiagramLinkForm from './DiagramLinkForm';
 import { MdPending } from 'react-icons/md';
 import { AiFillCheckCircle } from 'react-icons/ai';
+import useHandleNode from '../hooks/useHandleNode';
 
 const nodeTypes = {
   genericNode: GenericNode,
@@ -33,33 +34,11 @@ const Diagram = (props) => {
     end: { type: MarkerType.ArrowClosed, color: 'black' },
     isAnimated: true
   });
-
-
-
-
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [lineType, setLineType] = useState('straight');
   const [selectedNode, setSelectedNode] = useState();
-
-  const onNodeContextMenu = useCallback(
-    (event, node) => {
-      // Prevent native context menu from showing
-      event.preventDefault();
-
-      // Calculate position of the context menu. We want to make sure it
-      // doesn't get positioned off-screen.
-      const pane = reactFlowWrapper.current.getBoundingClientRect();
-      setMenu({
-        id: node.id,
-        top: event.clientY < pane.height - 200 && event.clientY,
-        left: event.clientX < pane.width - 200 && event.clientX,
-        right: event.clientX >= pane.width - 200 && pane.width - event.clientX,
-        bottom: event.clientY >= pane.height - 200 && pane.height - event.clientY,
-      });
-    },
-    [setMenu]
-  );
+  const { modifyText, addNode, onNodeClick, onNodeMouseEnter, onNodeMouseLeave, onNodeContextMenu } = useHandleNode(nodes, edges, setEdges, setSelectedNode, setNodes, reactFlowWrapper, mousePosition, project, openDiagram, setPendingDiagramChanges, setMenu);
 
   // Close the context menu if it's open whenever the window is clicked.
   const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
@@ -100,22 +79,6 @@ const Diagram = (props) => {
     saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
   }, [setDiagramName, saveDiagram, getDiagramState]);
 
-  const modifyText = useCallback((event, textType, nodeID) => {
-    const inputText = event.target.value;
-    setNodes((currentNodes) => {
-      const newNodes = currentNodes.map((node) => {
-        if(node.id !== nodeID) return node;
-        return {
-          ...node,
-          data: {
-            ...node.data,
-            [textType]: inputText
-          }
-        }
-      });
-      return newNodes;
-    });
-  }, [setNodes]);
 
   const linkDiagram = useCallback((type, id, linkedDiagramName) => {
     // update node with linked diagram name
@@ -173,46 +136,6 @@ const Diagram = (props) => {
     const newEdges = edges.filter((e) => e.id !== edge.id);
     setEdges(newEdges);
   }, [edges, setEdges, setPendingDiagramChanges]);
-
-  const addNode = useCallback(() => {
-    setNodes((currentNodes) => {
-      const { top, left } = reactFlowWrapper.current.getBoundingClientRect();
-      const newNode = {
-        id: (currentNodes.length + 1).toString(),
-        type: 'genericNode',
-        dragHandle: '.drag-handle',
-        position: project({ x: mousePosition.x - left - 150, y: mousePosition.y - top - 75 }),
-        data: {
-          functions: ['modifyText', 'openDiagram'],
-          title: '',
-          subtitle: '',
-          description: '',
-          modifyText,
-          openDiagram
-        },
-      };
-      return currentNodes.concat(newNode);
-    });
-    setPendingDiagramChanges(true);
-  }, [setNodes, mousePosition, project, modifyText, openDiagram, setPendingDiagramChanges]);
-
-
-  const onNodeClick = useCallback((event, node) => {
-    if(!event.ctrlKey || !event.shiftKey) return;
-    const newNodes = nodes.filter((n) => n.id !== node.id);
-    setNodes(newNodes);
-    const newEdges = edges.filter((e) => e.source !== node.id && e.target !== node.id);
-    setEdges(newEdges);
-    setPendingDiagramChanges(true);
-  }, [nodes, edges, setNodes, setEdges, setPendingDiagramChanges]);
-
-  const onNodeMouseEnter = useCallback((event, node) => {
-    setSelectedNode(node);
-  }, []);
-
-  const onNodeMouseLeave = useCallback(() => {
-    setSelectedNode({id: '-1'});
-  }, []);
 
   // load diagram from local storage
   useEffect(() => {
@@ -277,30 +200,30 @@ const Diagram = (props) => {
     });
   }, [selectedNode, setNodes]);
 
-    // add event listeners
-    useEffect(() => {
-      const handleKeyPress = (event) => {
-        if (event.key === 'f' && event.ctrlKey) {  
-          addNode();
-        }
-        if (event.key === 's' && event.ctrlKey) {
-          const instanceObject = reactFlowInstance.toObject();
-          const lastUpdated = formatDate(new Date());
-          setDiagramLastUpdated(lastUpdated);
-          saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
-        }
+  // add event listeners
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === 'f' && event.ctrlKey) {  
+        addNode();
       }
-      const handleMouseMove = (event) => {
-        setMousePosition({ x: event.clientX, y: event.clientY });
+      if (event.key === 's' && event.ctrlKey) {
+        const instanceObject = reactFlowInstance.toObject();
+        const lastUpdated = formatDate(new Date());
+        setDiagramLastUpdated(lastUpdated);
+        saveDiagram(diagramName, diagramDescription, instanceObject, lastUpdated);
       }
-  
-      document.addEventListener('keydown', handleKeyPress);
-      document.addEventListener('mousemove', handleMouseMove);
-      return () => {
-        document.removeEventListener('keydown', handleKeyPress);
-        document.removeEventListener('mousemove', handleMouseMove);
-      }
-    }, [setMousePosition, addNode, reactFlowInstance, saveDiagram, diagramName, diagramDescription]);
+    }
+    const handleMouseMove = (event) => {
+      setMousePosition({ x: event.clientX, y: event.clientY });
+    }
+
+    document.addEventListener('keydown', handleKeyPress);
+    document.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      document.removeEventListener('mousemove', handleMouseMove);
+    }
+  }, [setMousePosition, addNode, reactFlowInstance, saveDiagram, diagramName, diagramDescription]);
       
   if(!savedDiagramName) return (
     <div>
@@ -328,8 +251,22 @@ const Diagram = (props) => {
         onPaneClick={onPaneClick}
       >
         <Background color="#aaa" gap={30} />
-        {menu && <ContextMenu {...menu} onClick={onPaneClick} setDiagramLink={setDiagramLink} />}
-        {diagramLink && <DiagramLinkForm closeForm={() => setDiagramLink(null)} linkDiagram={linkDiagram} type={diagramLink.type} id={diagramLink.id} mouseX={mousePosition.x} mouseY={mousePosition.y} />}
+        { menu && 
+          <ContextMenu {...menu} 
+            onClick={onPaneClick} 
+            setDiagramLink={setDiagramLink} 
+          />
+        }
+        { diagramLink && 
+          <DiagramLinkForm 
+            closeForm={() => setDiagramLink(null)} 
+            linkDiagram={linkDiagram} 
+            type={diagramLink.type} 
+            id={diagramLink.id} 
+            mouseX={mousePosition.x} 
+            mouseY={mousePosition.y} 
+          />
+        }
       </ReactFlow>
       <input type="text" className="diagram-input diagram-name" placeholder='Enter diagram name here...' value={diagramName || savedDiagramName} onKeyDown={handleDiagramNameChange} onChange={(e) => setDiagramName(e.target.value)} />
       <input type="text" className="diagram-input diagram-description" placeholder='Enter diagram description here...' value={diagramDescription} onChange={(e) => setDiagramDescription(e.target.value)} />
