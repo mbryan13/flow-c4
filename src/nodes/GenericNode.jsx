@@ -10,7 +10,7 @@ const handlePositions = [
 ]
 
 function GenericNode({ data, isConnectable, id }) {
-  const { isHovered: nodeIsHovered, modifyText, openDiagram, title, subtitle, description, link } = data;
+  const { isHovered: nodeIsHovered, modifyText, openDiagram, title, subtitle, description, link, color } = data;
   const [handleRefs, setHandleRefs] = useState({
     a: createRef(),
     b: createRef(),
@@ -30,22 +30,12 @@ function GenericNode({ data, isConnectable, id }) {
     p: createRef()
   });
 
-  const onHandleEnter = useCallback((handleId) => {
-    handleRefs[handleId].current.style.opacity = 1;
-  }, []);
-
-  const onHandleLeave = useCallback((handleId) => {
-    handleRefs[handleId].current.style.opacity = nodeIsHovered ? 1 : 0.2;
-  }, []);
-
-  const onHandleClick = useCallback((handleId) => {
-  }, []);
 
   useEffect(() => {
     Object.keys(handleRefs).forEach((key) => {
       handleRefs[key].current.style.opacity = nodeIsHovered ? 0.2 : 0;
     })
-  }, [nodeIsHovered]);
+  }, [nodeIsHovered, handleRefs]);
 
   const renderHandles = useCallback(() => {
     const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -69,9 +59,6 @@ function GenericNode({ data, isConnectable, id }) {
           id={alphabet[index]} 
           key={index} 
           ref={handleRef}
-          onMouseEnter={() => onHandleEnter(alphabet[index])}
-          onMouseLeave={() => onHandleLeave(alphabet[index])}
-          onClick={() => onHandleClick(alphabet[index])}
         />
       )
     })
@@ -79,8 +66,8 @@ function GenericNode({ data, isConnectable, id }) {
   }, [])
 
   return (
-    <div className="text-updater-node" >
-      <div className='drag-handle'></div>
+    <div className="text-updater-node" style={{backgroundColor: color || 'rgb(71, 71, 255)'}}>
+      <div className='drag-handle' style={{ backgroundColor: color, opacity: 0.7 }}></div>
       {data.link && <div onClick={() => openDiagram(link)} className='diagram-link'><CiLink/></div>}
       <input type="text" className="nodrag generic-input input-title" value={title} onChange={(e) => modifyText(e, 'title', id)} />
       <input type="text" className="nodrag generic-input input-subtitle" value={subtitle} onChange={(e) => modifyText(e, 'subtitle', id)} />

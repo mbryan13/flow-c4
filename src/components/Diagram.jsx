@@ -4,6 +4,7 @@ import CustomEdge from '../edges/CustomEdge';
 import ReactFlow, { useNodesState, useEdgesState, addEdge, useReactFlow, ReactFlowProvider, MarkerType, Background } from 'reactflow';
 import ContextMenu from './ContextMenu.jsx';
 import DiagramLinkForm from './DiagramLinkForm';
+import ColorPaletteMenu from './ColorPaletteMenu';
 import { MdPending } from 'react-icons/md';
 import { AiFillCheckCircle } from 'react-icons/ai';
 import useHandleNode from '../hooks/useHandleNode';
@@ -30,6 +31,7 @@ const Diagram = (props) => {
   const [diagramLastUpdated, setDiagramLastUpdated] = useState('');
   const [diagramLink, setDiagramLink] = useState(null);
   const [shouldSaveDiagram, setShouldSaveDiagram] = useState(false);
+  const [colorPaletteMenu, setColorPaletteMenu] = useState(null);
   
   const [markers, setMarkers] = useState({
     start: { type: null, color: 'black' },
@@ -98,6 +100,42 @@ const Diagram = (props) => {
     }
     if(type === 'node') addNodeLink(id, linkedDiagramName);
     if(type === 'edge') addEdgeLink(id, linkedDiagramName);
+    setShouldSaveDiagram(true);
+  }, [setNodes, setEdges, setShouldSaveDiagram]);
+
+  const changeColor = useCallback((id, type, color) => {
+    const changeNodeColor = (id, color) => {
+      setNodes((currentNodes) => {
+        const newNodes = currentNodes.map((node) => {
+          if(node.id !== id) return node;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              color
+            }
+          }
+        });
+        return newNodes;
+      });
+    }
+    const changeEdgeColor = (id, color) => {
+      setEdges((currentEdges) => {
+        const newEdges = currentEdges.map((edge) => {
+          if(edge.id !== id) return edge;
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              color
+            }
+          }
+        });
+        return newEdges;
+      });
+    }
+    if(type === 'node') changeNodeColor(id, color);
+    if(type === 'edge') changeEdgeColor(id, color);
     setShouldSaveDiagram(true);
   }, [setNodes, setEdges, setShouldSaveDiagram]);
 
@@ -231,6 +269,7 @@ const Diagram = (props) => {
           <ContextMenu {...menu} 
             onClick={onPaneClick} 
             setDiagramLink={setDiagramLink} 
+            setColorPaletteMenu={setColorPaletteMenu}
           />
         }
         { diagramLink && 
@@ -241,6 +280,16 @@ const Diagram = (props) => {
             id={diagramLink.id} 
             mouseX={mousePosition.x} 
             mouseY={mousePosition.y} 
+          />
+        }
+        { colorPaletteMenu &&
+          <ColorPaletteMenu
+            id={colorPaletteMenu.id}
+            type={colorPaletteMenu.type}
+            setColorPaletteMenu={setColorPaletteMenu}
+            mouseX={mousePosition.x}
+            mouseY={mousePosition.y}
+            changeColor={changeColor}
           />
         }
       </ReactFlow>
