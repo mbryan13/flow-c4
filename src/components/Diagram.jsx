@@ -9,6 +9,7 @@ import { MdPending } from 'react-icons/md';
 import { AiFillCheckCircle } from 'react-icons/ai';
 import useHandleNode from '../hooks/useHandleNode';
 import useHandleEdge from '../hooks/useHandleEdge';
+import axios from 'axios';
 
 const nodeTypes = {
   genericNode: GenericNode,
@@ -169,8 +170,9 @@ const Diagram = (props) => {
         });
       });
     }
-    const getOrCreateDiagram = (savedDiagramName) => {
-      let diagram = localStorage.getItem(savedDiagramName);
+    const getOrCreateDiagram = async (savedDiagramName) => {
+      let response = await axios.get(`http://localhost:${window.WS_PORT}/flowChart/${savedDiagramName}`);
+      let diagram = response.data;
       if(!diagram) {
         const instanceObject = {
           nodes: [],
@@ -181,21 +183,22 @@ const Diagram = (props) => {
             zoom: 1
           },
         }
-        localStorage.setItem(savedDiagramName, JSON.stringify(instanceObject));
-        diagram = localStorage.getItem(savedDiagramName);
+        diagram = instanceObject;
       }
       return diagram;
     };
-    const diagram = getOrCreateDiagram(savedDiagramName);
-    const parsedDiagram = JSON.parse(diagram);
-    addFunctions(parsedDiagram);
+    const loadDiagram = async (savedDiagramName) => {
+      const diagram = await getOrCreateDiagram(savedDiagramName);
+      addFunctions(diagram);
 
-    setNodes(parsedDiagram.nodes)
-    setEdges(parsedDiagram.edges)
-    setDiagramDescription(parsedDiagram.diagramDescription || '');
-    setDiagramName(savedDiagramName);
-    setDiagramLastUpdated(parsedDiagram.lastUpdated);
-    setViewport(parsedDiagram.viewport);
+      setNodes(diagram.nodes)
+      setEdges(diagram.edges)
+      setDiagramDescription(diagram.diagramDescription || '');
+      setDiagramName(savedDiagramName);
+      setDiagramLastUpdated(diagram.lastUpdated);
+      setViewport(diagram.viewport);
+    }
+    loadDiagram(savedDiagramName);
   
   }, [savedDiagramName, setEdges, setNodes, setViewport, modifyText, openDiagram, updateEdgeLabel]); 
 

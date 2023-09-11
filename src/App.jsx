@@ -2,6 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import Diagram from './components/Diagram.jsx';
 import 'reactflow/dist/style.css';
 import Toolbar from './components/Toolbar';
+import axios from 'axios';
 
 function App() {
   const [savedDiagramName, setSavedDiagramName] = useState(null);
@@ -32,7 +33,7 @@ function App() {
     setDiagramBackwardsHistory(newDiagramBackwardsHistory);
   }, [diagramForwardsHistory, diagramBackwardsHistory])
 
-  const createNewDiagram = useCallback(() => {
+  const createNewDiagram = useCallback(async () => {
     const instanceObject = {
       nodes: [],
       edges: [],
@@ -42,18 +43,10 @@ function App() {
         zoom: 1
       },
     }
-    localStorage.setItem('New Diagram', JSON.stringify(instanceObject));
+    await axios.post(`http://localhost:${window.WS_PORT}/flowChart/New Diagram`, instanceObject);
     setDiagramForwardsHistory([]);
     setDiagramBackwardsHistory(diagramBackwardsHistory.concat('New Diagram'));
   }, [diagramBackwardsHistory]);
-  
-
-  const diagramExists = useCallback((diagramName) => {
-    for (const key in localStorage) {
-      if(key === diagramName) return true;
-    }
-    return false;
-  }, []);
 
   const openDiagram = useCallback((diagramName) => {
     setPendingDiagramChanges(false);
@@ -71,11 +64,12 @@ function App() {
       setDiagramBackwardsHistory(newDiagramBackwardsHistory);
     }
 
+
     instanceObject.lastUpdated = lastUpdated;
     instanceObject.diagramName = diagramName;
     instanceObject.diagramDescription = diagramDescription;
 
-    localStorage.setItem(diagramName, JSON.stringify(instanceObject));
+    axios.post(`http://localhost:${window.WS_PORT}/flowChart/${diagramName}`, instanceObject);
     setPendingDiagramChanges(false);
   }, [diagramBackwardsHistory, savedDiagramName]);
 
@@ -83,20 +77,6 @@ function App() {
     const newDiagramName = diagramBackwardsHistory[diagramBackwardsHistory.length - 1];
     setSavedDiagramName(newDiagramName);
   }, [diagramBackwardsHistory])
-
-  useEffect(() => {
-    console.log('diagram backwards history: ', diagramBackwardsHistory);
-    console.log('diagram forwards history: ', diagramForwardsHistory);
-  }, [diagramForwardsHistory, diagramBackwardsHistory]);
-
-
-  // useEffect(() => {
-  //   for (const key in localStorage) {
-  //     console.log(key);
-  //     if(key !== 'Banking System') localStorage.removeItem(key);
-  //   }
-  //   console.log(localStorage)
-  // }, []);
 
   useEffect(() => {
     const handleMouseDown = (event) => {
